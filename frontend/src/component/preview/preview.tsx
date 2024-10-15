@@ -1,6 +1,6 @@
-import {Button, makeStyles,tokens, Text } from "@fluentui/react-components";
-import { DismissRegular } from "@fluentui/react-icons";
-import { useEffect } from "react";
+import {Button, makeStyles, tokens, Text, Tooltip} from "@fluentui/react-components";
+import {DismissRegular} from "@fluentui/react-icons";
+import {useEffect} from "react";
 
 const useStyle = makeStyles({
     container: {
@@ -30,12 +30,17 @@ const useStyle = makeStyles({
     body: {
         width: '100%',
         maxWidth: '100%',
-        height: '100%',
-        maxHeight: '100%',
+        height: 'calc(100% - 4rem - 1px)',
+        maxHeight: 'calc(100% - 4rem - 1px)',
         flex: 1,
         display: 'flex',
         justifyContent: 'center',
-        alignItems:'center',
+        alignItems: 'center',
+        '& > img': {
+            maxWidth: '100%',
+            width: 'auto',
+            maxHeight: '100%',
+        }
     },
 })
 
@@ -52,24 +57,29 @@ export function PreviewFile(props: { url: string, content_type: string, close: (
         })
 
         return () => {
-            window.removeEventListener('keyup', () => { })
+            window.removeEventListener('keyup', () => {
+            })
         }
     }, [])
 
     switch (category) {
         case "image":
-            return <div className={styles.container}>
+            return <div className={styles.container} style={{display: props.url?'flex':'none'}}>
                 <div className={styles.header}>
-                    <Button
-                        size="large"
-                        appearance="transparent"
-                        className={styles.header_close_button}
-                        onClick={() => { props.close() }}>
-                        <DismissRegular />
-                    </Button>
+                    <Tooltip content={'退出预览'} relationship={'description'}>
+                        <Button
+                            size="large"
+                            appearance="transparent"
+                            className={styles.header_close_button}
+                            onClick={() => {
+                                props.close()
+                            }}>
+                            <DismissRegular/>
+                        </Button>
+                    </Tooltip>
                 </div>
                 <div className={styles.body}>
-                    <img src={props.url}/>
+                    <img src={props.url} alt={''}/>
                 </div>
             </div>
         default:

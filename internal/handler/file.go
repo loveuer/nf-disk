@@ -118,9 +118,10 @@ func FileInfo(c *ndh.Ctx) error {
 
 func FileGet(c *ndh.Ctx) error {
 	type Req struct {
-		ConnId uint64 `json:"conn_id"`
-		Bucket string `json:"bucket"`
-		Key    string `json:"key"`
+		ConnId   uint64 `json:"conn_id"`
+		Bucket   string `json:"bucket"`
+		Key      string `json:"key"`
+		Duration int64  `json:"duration"` // seconds, default 60
 	}
 
 	var (
@@ -138,7 +139,11 @@ func FileGet(c *ndh.Ctx) error {
 		return c.Send500(err.Error())
 	}
 
-	if link, err = client.GetObjectEntry(c.Context(), req.Bucket, req.Key); err != nil {
+	if req.Duration == 0 {
+		req.Duration = 60
+	}
+
+	if link, err = client.GetObjectEntry(c.Context(), req.Bucket, req.Key, req.Duration); err != nil {
 		return c.Send500(err.Error())
 	}
 
