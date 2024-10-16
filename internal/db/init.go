@@ -5,22 +5,18 @@ import (
 	"fmt"
 	"strings"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
-func New(ctx context.Context, uri string, opts ...Option) (*Client, error) {
+func New(ctx context.Context, uri string) (*Client, error) {
 	strs := strings.Split(uri, "::")
 
 	if len(strs) != 2 {
 		return nil, fmt.Errorf("db.Init: opt db uri invalid: %s", uri)
 	}
 
-	c := &Client{ttype: strs[0], cfgSqlite: &cfgSqlite{fsType: "file"}}
-	for _, f := range opts {
-		f(c)
-	}
+	c := &Client{ttype: strs[0]}
 
 	var (
 		err error
@@ -29,11 +25,11 @@ func New(ctx context.Context, uri string, opts ...Option) (*Client, error) {
 
 	switch strs[0] {
 	case "sqlite":
-		err = openSqlite(c, dsn)
-	case "mysql":
-		c.cli, err = gorm.Open(mysql.Open(dsn))
-	case "postgres":
-		c.cli, err = gorm.Open(postgres.Open(dsn))
+		c.cli, err = gorm.Open(sqlite.Open(dsn))
+	//case "mysql":
+	//	c.cli, err = gorm.Open(mysql.Open(dsn))
+	//case "postgres":
+	//	c.cli, err = gorm.Open(postgres.Open(dsn))
 	default:
 		return nil, fmt.Errorf("db type only support: [sqlite, mysql, postgres], unsupported db type: %s", strs[0])
 	}
@@ -45,8 +41,8 @@ func New(ctx context.Context, uri string, opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-func Init(ctx context.Context, uri string, opts ...Option) (err error) {
-	if Default, err = New(ctx, uri, opts...); err != nil {
+func Init(ctx context.Context, uri string) (err error) {
+	if Default, err = New(ctx, uri); err != nil {
 		return err
 	}
 

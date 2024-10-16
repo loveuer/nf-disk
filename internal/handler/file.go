@@ -188,3 +188,32 @@ func FileDownload(c *ndh.Ctx) error {
 
 	return c.Send200(req)
 }
+
+func FileDelete(c *ndh.Ctx) error {
+	type Req struct {
+		ConnId uint64   `json:"conn_id"`
+		Bucket string   `json:"bucket"`
+		Keys   []string `json:"keys"`
+	}
+
+	var (
+		err     error
+		req     = new(Req)
+		client  *s3.Client
+		deleted []string
+	)
+
+	if err = c.ReqParse(req); err != nil {
+		return c.Send400(err.Error())
+	}
+
+	if _, client, err = manager.Manager.Use(req.ConnId); err != nil {
+		return c.Send500(err.Error())
+	}
+
+	if deleted, err = client.DeleteObjects(c.Context(), req.Bucket, req.Keys...); err != nil {
+		return c.Send500(err.Error())
+	}
+
+	return c.Send200(map[string]any{"deleted": deleted})
+}

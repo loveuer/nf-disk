@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/loveuer/nf-disk/internal/opt"
 	"github.com/loveuer/nf-disk/internal/tool"
-	"io"
-
 	"gorm.io/gorm"
 )
 
@@ -14,10 +12,9 @@ var (
 )
 
 type Client struct {
-	ctx       context.Context
-	cli       *gorm.DB
-	ttype     string
-	cfgSqlite *cfgSqlite
+	ctx   context.Context
+	cli   *gorm.DB
+	ttype string
 }
 
 func (c *Client) Type() string {
@@ -44,18 +41,4 @@ func (c *Client) Session(ctxs ...context.Context) *gorm.DB {
 func (c *Client) Close() {
 	d, _ := c.cli.DB()
 	d.Close()
-}
-
-// Dump
-// Only for sqlite with mem mode to dump data to bytes(io.Reader)
-func (c *Client) Dump() (reader io.ReadSeekCloser, ok bool) {
-	if c.ttype != "sqlite" {
-		return nil, false
-	}
-
-	if c.cfgSqlite.fsType != "mem" {
-		return nil, false
-	}
-
-	return c.cfgSqlite.memDump.Dump(), true
 }

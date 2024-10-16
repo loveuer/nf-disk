@@ -34,7 +34,7 @@ func (c *Client) ListBucket(ctx context.Context) ([]*ListBucketRes, error) {
 	var (
 		err   error
 		input = &s3.ListBucketsInput{
-			MaxBuckets: aws.Int32(100),
+			//MaxBuckets: aws.Int32(100),
 		}
 		output *s3.ListBucketsOutput
 	)
@@ -58,7 +58,7 @@ func (c *Client) ListFile(ctx context.Context, bucket string, prefix string) ([]
 		err   error
 		input = &s3.ListObjectsV2Input{
 			Delimiter: aws.String("/"),
-			MaxKeys:   aws.Int32(1000),
+			MaxKeys:   1000,
 			Bucket:    aws.String(bucket),
 		}
 		output *s3.ListObjectsV2Output
@@ -91,7 +91,7 @@ func (c *Client) ListFile(ctx context.Context, bucket string, prefix string) ([]
 				Key:          strings.Clone(*item.Key),
 				Name:         strings.TrimPrefix(*item.Key, prefix),
 				LastModified: *item.LastModified,
-				Size:         *item.Size,
+				Size:         item.Size,
 				Type:         ListFileTypeFile,
 			}
 		},

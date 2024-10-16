@@ -37,7 +37,7 @@ func (c *Client) PutFile(ctx context.Context, bucket string, obj *PutFilesObj) e
 	}
 
 	if obj.ContentLength > 0 {
-		input.ContentLength = aws.Int64(obj.ContentLength)
+		input.ContentLength = obj.ContentLength
 	}
 
 	if obj.ContentType == "" {

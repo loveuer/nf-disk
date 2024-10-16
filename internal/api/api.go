@@ -38,6 +38,7 @@ func Init(ctx context.Context) error {
 	register("/api/file/info", handler.FileInfo)
 	register("/api/file/get", handler.FileGet)
 	register("/api/file/download", handler.FileDownload)
+	register("/api/file/delete", handler.FileDelete)
 
 	return nil
 }
