@@ -7,6 +7,18 @@ export function CanPreview(filename: string) {
             return "image/jpg"
         case "png":
             return "image/png"
+        case "json":
+            return "application/json"
+        case "go":
+            return "application/go"
+        case "js":
+            return "application/javascript"
+        case "css":
+            return "text/css"
+        case "html":
+            return "text/html"
+        case "txt":
+            return "text/plain"
         default:
             return ""
     }

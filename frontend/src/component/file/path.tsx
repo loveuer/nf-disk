@@ -2,7 +2,7 @@ import {Button, Input, makeStyles, Text, tokens, Tooltip} from "@fluentui/react-
 import {useStoreBucket} from "../../store/bucket";
 import {ArchiveRegular, ArrowCurveUpLeftFilled} from "@fluentui/react-icons";
 import {useStoreFile, useStoreFileFilter} from "../../store/file";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {debounce} from 'lodash'
 import {useStoreConnection} from "../../store/connection";
 import {ListFileComponent} from "./list_file";
@@ -59,6 +59,19 @@ export function Path() {
     const {conn_active} = useStoreConnection()
     const {bucket_active, bucket_get, bucket_set} = useStoreBucket()
     const {prefix, filter, prefix_set, filter_set} = useStoreFileFilter()
+
+    useEffect(() => {
+        document.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            if (e.button === 3) {
+                handleClickUp().then()
+            }
+        })
+
+        return () => {
+            document.removeEventListener("mouseup", (e) => {});
+        }
+    }, [prefix]);
 
     async function handleClickUp() {
         const dirs = prefix.split('/').filter((item => item))

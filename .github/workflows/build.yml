@@ -47,4 +47,4 @@ jobs:
           title: "Release_Windows_${{ github.ref_name }}"
           files: |
             build/bin/nf-disk-amd64-installer.exe
-            build/bin/nf-disk-amd64.exe
+            build/bin/nf-disk.exe

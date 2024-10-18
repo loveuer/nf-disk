@@ -127,8 +127,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
             set_ctx_menu({x: 0, y: 0, display: "none"});
         });
         return () => {
-            document.removeEventListener("click", (e) => {
-            });
+            document.removeEventListener("click", (e) => {});
         };
     }, []);
 

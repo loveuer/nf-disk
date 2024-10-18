@@ -5,7 +5,9 @@ import (
 	"github.com/loveuer/nf-disk/internal/handler"
 	"github.com/loveuer/nf-disk/ndh"
 	"github.com/loveuer/nf/nft/log"
+	"path/filepath"
 	"reflect"
+	"runtime"
 )
 
 var (
@@ -13,8 +15,8 @@ var (
 )
 
 func register(path string, h ndh.Handler) {
-	name := reflect.ValueOf(h).String()
-	log.Info("app register: path = %s, name = %s", path, name)
+	name := runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
+	log.Info("app register: path = %s, name = %s", path, filepath.Base(name))
 	apis[path] = h
 }
 
@@ -28,6 +30,7 @@ func Init(ctx context.Context) error {
 	register("/runtime/dialog/save", handler.DialogSave(ctx))
 	register("/api/connection/test", handler.ConnectionTest)
 	register("/api/connection/create", handler.ConnectionCreate)
+	register("/api/connection/delete", handler.ConnectionDelete)
 	register("/api/connection/list", handler.ConnectionList)
 	register("/api/connection/connect", handler.ConnectionConnect)
 	register("/api/connection/disconnect", handler.ConnectionDisconnect)
@@ -37,6 +40,7 @@ func Init(ctx context.Context) error {
 	register("/api/file/upload", handler.FileUpload)
 	register("/api/file/info", handler.FileInfo)
 	register("/api/file/get", handler.FileGet)
+	register("/api/file/content", handler.FileContent)
 	register("/api/file/download", handler.FileDownload)
 	register("/api/file/delete", handler.FileDelete)
 
