@@ -1,6 +1,7 @@
 import {Button, makeStyles, tokens, Text, Tooltip} from "@fluentui/react-components";
 import {DismissRegular} from "@fluentui/react-icons";
 import {useEffect} from "react";
+import {PreviewText} from "./preview_text";
 
 const useStyle = makeStyles({
     container: {
@@ -44,10 +45,11 @@ const useStyle = makeStyles({
     },
 })
 
-export function PreviewFile(props: { url: string, content_type: string, close: () => void }) {
+export function Preview(props: { url: string, content_type: string, close: () => void }) {
     const styles = useStyle()
 
     const category = props.content_type.split('/')[0]
+    const content_type = props.content_type.split('/')[1]
 
     useEffect(() => {
         window.addEventListener('keyup', (e) => {
@@ -62,30 +64,34 @@ export function PreviewFile(props: { url: string, content_type: string, close: (
         }
     }, [])
 
-    switch (category) {
-        case "image":
-            return <div className={styles.container} style={{display: props.url?'flex':'none'}}>
-                <div className={styles.header}>
-                    <Tooltip content={'退出预览'} relationship={'description'}>
-                        <Button
-                            size="large"
-                            appearance="transparent"
-                            className={styles.header_close_button}
-                            onClick={() => {
-                                props.close()
-                            }}>
-                            <DismissRegular/>
-                        </Button>
-                    </Tooltip>
-                </div>
-                <div className={styles.body}>
-                    <img src={props.url} alt={''}/>
-                </div>
-            </div>
-        default:
-            return <div className={styles.container}>
-                <Text>该文件无法预览</Text>
-            </div>
-    }
+    return <div className={styles.container} style={{display: props.url ? 'flex' : 'none'}}>
+        <div className={styles.header}>
+            <Tooltip content={'退出预览'} relationship={'description'}>
+                <Button
+                    size="large"
+                    appearance="transparent"
+                    className={styles.header_close_button}
+                    onClick={() => {
+                        props.close()
+                    }}>
+                    <DismissRegular/>
+                </Button>
+            </Tooltip>
+        </div>
+        <div className={styles.body}>
+            <PreviewFile url={props.url} category={category} content_type={content_type} />
+        </div>
+    </div>
 
+}
+
+function PreviewFile(props: { url: string, category: string, content_type: string }) {
+    switch (props.category) {
+        case "image":
+            return <img src={props.url} alt={''}/>
+        case "application":
+            return <PreviewText url={props.url} category={props.category} content_type={props.content_type} />
+        default:
+            return <Text>该文件无法预览</Text>
+    }
 }

@@ -4,7 +4,7 @@ import {makeStyles} from "@fluentui/react-components";
 import {useStoreBucket} from "../../store/bucket";
 import {ListFileComponent} from "./list_file";
 import {useState} from "react";
-import {PreviewFile} from "../preview/preview";
+import {Preview} from "../preview/preview";
 
 const useStyles = makeStyles({
     content: {
@@ -29,7 +29,7 @@ export function Content() {
     return <div className={styles.content}>
         <Path/>
         {
-            preview.url ? <PreviewFile url={preview.url} content_type={preview.content_type} close={closeFn}/> :
+            preview.url ? <Preview url={preview.url} content_type={preview.content_type} close={closeFn}/> :
                 (
                     bucket_active ?
                         <ListFileComponent set_preview_fn={set_preview}/> : <ListBucketComponent/>

@@ -211,3 +211,26 @@ func ConnectionBuckets(c *ndh.Ctx) error {
 
 	return c.Send200(map[string]any{"list": buckets})
 }
+
+func ConnectionDelete(c *ndh.Ctx) error {
+	type Req struct {
+		ConnId uint64 `json:"conn_id"`
+	}
+
+	var (
+		err error
+		req = new(Req)
+	)
+
+	if err = c.ReqParse(req); err != nil {
+		return c.Send400(err.Error())
+	}
+
+	if err = db.Default.Session().Delete(&model.Connection{Id: req.ConnId}).Error; err != nil {
+		return c.Send500(err.Error())
+	}
+
+	_ = manager.Manager.UnRegister(req.ConnId)
+
+	return c.Send200(nil)
+}
