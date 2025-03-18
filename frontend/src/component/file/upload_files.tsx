@@ -6,8 +6,9 @@ import {
     DialogActions,
     DialogContent,
     Button, Field, Input, makeStyles, tokens, Tooltip,
+    Checkbox,
 } from "@fluentui/react-components";
-import {useState} from "react";
+import {ChangeEvent, useState} from "react";
 import {useToast} from "../../message";
 import {Dial} from "../../api";
 import {useStoreConnection} from "../../store/connection";
@@ -23,6 +24,7 @@ const useStyle = makeStyles({
         height: "100%",
         width: "100%",
         gridColumnStart: 0,
+        marginTop: '10px',
     },
     input: {
         cursor: "pointer",
@@ -31,6 +33,13 @@ const useStyle = makeStyles({
     select: {
         minWidth: 'unset',
     },
+    custom_key: {
+        marginTop: '10px',
+
+    },
+    custom_key_check: {
+        marginLeft: '-5px',
+    }
 });
 
 export interface UploadFilesProps {
@@ -41,12 +50,14 @@ export function UploadFiles(props: UploadFilesProps) {
     const styles = useStyle();
     const {dispatchMessage} = useToast();
 
-    const { conn_active} = useStoreConnection();
+    const {conn_active} = useStoreConnection();
     const {bucket_active} = useStoreBucket();
     const {files_get} = useStoreFile()
-    const {prefix } = useStoreFileFilter()
+    const {prefix} = useStoreFileFilter()
 
     const [selected, set_selected] = useState<string[]>([]);
+    const [checked, set_check] = useState(false);
+    const [custom_key, set_custom_key] = useState('');
 
     async function handleSelect() {
         const res = await Dial<{ result: string[] }>('/runtime/dialog/open', {
@@ -69,6 +80,7 @@ export function UploadFiles(props: UploadFilesProps) {
                 bucket: bucket_active?.name,
                 location: item,
                 detect_content_type: true,
+                name: (checked && custom_key) ? custom_key : '',
             })
 
             if (res.status !== 200) {
@@ -78,12 +90,20 @@ export function UploadFiles(props: UploadFilesProps) {
             }
         }
 
-        if(ok) {
+        if (ok) {
             files_get(conn_active!, bucket_active!, prefix)
             dispatchMessage('上传成功!', 'success')
             props.openFn(false)
             return
         }
+    }
+
+    function handleCheck(e: ChangeEvent<HTMLInputElement>) {
+        set_check(e.target.checked)
+    }
+
+    function handleCustomKey(e:ChangeEvent<HTMLInputElement>) {
+       set_custom_key(e.target.value)
     }
 
     return <>
@@ -108,6 +128,15 @@ export function UploadFiles(props: UploadFilesProps) {
                                     </Button>
                                 </Tooltip>
                             }/>
+                    </Field>
+                    <Field className={styles.custom_key}>
+                        <Checkbox onChange={e => handleCheck(e)} className={styles.custom_key_check}
+                                  label="自定义 key"/>
+                        <Input
+                            style={{visibility: checked ? 'visible' : 'hidden'}}
+                            className={styles.input}
+                            onChange={e => handleCustomKey(e)}
+                            value={custom_key}/>
                     </Field>
                 </DialogContent>
                 <DialogActions className={styles.container}>

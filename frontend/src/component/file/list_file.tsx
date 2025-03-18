@@ -174,7 +174,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
     async function handleDownload(file: string | null) {
         if (!file) return;
         const res1 = await Dial<{ result: string }>("/runtime/dialog/save", {
-            default_filename: file,
+            default_filename: file.replace(/\\/g, '/').split("/").pop()
         });
         if (res1.status !== 200) {
             return;

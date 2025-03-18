@@ -182,6 +182,10 @@ func FileDownload(c *ndh.Ctx) error {
 		return c.Send500(err.Error())
 	}
 
+	defer func() {
+		_ = target.Close()
+	}()
+
 	if _, err = io.Copy(target, obj.Body); err != nil {
 		return c.Send500(err.Error())
 	}
