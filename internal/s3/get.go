@@ -2,20 +2,23 @@ package s3
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/labstack/gommon/log"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/loveuer/nf/nft/log"
 )
 
 type ObjectInfo struct {
-	Bucket      string `json:"bucket"`
-	Key         string `json:"key"`
-	ContentType string `json:"content_type"`
-	Expire      int64  `json:"expire"`
+	Bucket       string `json:"bucket"`
+	Key          string `json:"key"`
+	ContentType  string `json:"content_type"`
+	Expire       int64  `json:"expire"`
+	Size         uint64 `json:"size"`
+	LastModified int64  `json:"last_modified"` // unix millisecond
 }
 
 func (c *Client) GetObjectInfo(ctx context.Context, bucket string, key string) (*ObjectInfo, error) {
@@ -37,6 +40,8 @@ func (c *Client) GetObjectInfo(ctx context.Context, bucket string, key string) (
 		Key:         key,
 		ContentType: aws.ToString(output.ContentType),
 		Expire:      aws.ToTime(output.Expires).UnixMilli(),
+		Size:        uint64(output.ContentLength),
+		LastModified: aws.ToTime(output.LastModified).UnixMilli(),
 	}, nil
 }
 
@@ -55,7 +60,7 @@ func (presigner *Presigner) GetObject(ctx context.Context, bucketName string, ob
 		opts.Expires = time.Duration(lifetimeSecs * int64(time.Second))
 	})
 	if err != nil {
-		log.Error("Presigner: couldn't get a presigned request to get %v:%v. Here's why: %v\n",
+		log.Error("Presigner: couldn't get a presigned request to get %v:%v. Here's why: %v",
 			bucketName, objectKey, err)
 	}
 	return request, err
@@ -111,10 +116,12 @@ func (c *Client) GetObject(ctx context.Context, bucket string, key string) (*Obj
 
 	return &ObjectEntity{
 		ObjectInfo: ObjectInfo{
-			Bucket:      bucket,
-			Key:         key,
-			ContentType: aws.ToString(output.ContentType),
-			Expire:      aws.ToTime(output.Expires).UnixMilli(),
+			Bucket:       bucket,
+			Key:          key,
+			ContentType:  aws.ToString(output.ContentType),
+			Expire:       aws.ToTime(output.Expires).UnixMilli(),
+			Size:         uint64(output.ContentLength),
+			LastModified: aws.ToTime(output.LastModified).UnixMilli(),
 		},
 		Body: output.Body,
 	}, nil

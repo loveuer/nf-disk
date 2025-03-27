@@ -19,7 +19,11 @@ function isResp<T>(obj: any): obj is Resp<T> {
     );
 }
 
-export async function Dial<T=any>(path: string, req: any = null): Promise<Resp<T>> {
+export interface DialOption {
+    timeout?: number; // 超时时间，单位毫秒，默认为 0 表示不超时
+}
+
+export async function Dial<T=any>(path: string, req: any = null, opt:DialOption = {}): Promise<Resp<T>> {
     const bs = JSON.stringify(req)
     console.log(`[DEBUG] invoke req: path = ${path}, req =`, req)
 
@@ -27,7 +31,7 @@ export async function Dial<T=any>(path: string, req: any = null): Promise<Resp<T
     let ok = false;
 
     try {
-        const res = await Invoke(path, bs)
+        const res = await Invoke(path, bs, opt)
         const parsed = JSON.parse(res);
         if (isResp<T>(parsed)) {
             result = parsed;

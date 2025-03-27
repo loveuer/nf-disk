@@ -3,14 +3,16 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/loveuer/nf-disk/internal/manager"
-	"github.com/loveuer/nf-disk/internal/s3"
-	"github.com/loveuer/nf-disk/ndh"
-	"github.com/loveuer/nf/nft/log"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/loveuer/nf-disk/internal/manager"
+	"github.com/loveuer/nf-disk/internal/model"
+	"github.com/loveuer/nf-disk/internal/s3"
+	"github.com/loveuer/nf-disk/ndh"
+	"github.com/loveuer/nf/nft/log"
 )
 
 func FileUpload(c *ndh.Ctx) error {
@@ -178,17 +180,46 @@ func FileDownload(c *ndh.Ctx) error {
 		return c.Send500(err.Error())
 	}
 
+	defer obj.Body.Close()
+
 	if target, err = os.OpenFile(filepath.Clean(req.Location), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644); err != nil {
 		return c.Send500(err.Error())
 	}
 
-	defer func() {
-		_ = target.Close()
-	}()
+	defer target.Close()
 
-	if _, err = io.Copy(target, obj.Body); err != nil {
-		return c.Send500(err.Error())
+	var (
+		size   int64 = 32 * 1024
+		copied int64
+		count  int64
+	)
+
+	for {
+		if copied, err = io.CopyN(target, obj.Body, size); err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			log.Error("FileDownload: copy file err = %s", err.Error())
+			return c.Send500(err.Error())
+		}
+
+		count += copied
+
+		c.Context().Value("app").(model.App).Emit(model.EmitEventDownload, map[string]any{
+			"total":  obj.Size,
+			"copied": count,
+		})
+
+		if copied < size {
+			break
+		}
 	}
+
+		c.Context().Value("app").(model.App).Emit(model.EmitEventDownload, map[string]any{
+			"total":  obj.Size,
+			"copied": obj.Size,
+		})
 
 	return c.Send200(req)
 }

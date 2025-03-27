@@ -23,24 +23,26 @@ import {
     FolderRegular,
     PreviewLinkRegular,
 } from "@fluentui/react-icons";
-import {VirtualizerScrollView} from "@fluentui/react-components/unstable";
-import React, {useEffect, useState} from "react";
-import {useStoreBucket} from "../../store/bucket";
-import {S3File} from "../../interfaces/connection";
-import {useStoreFile, useStoreFileFilter} from "../../store/file";
-import {useStoreConnection} from "../../store/connection";
-import {TrimSuffix} from "../../hook/strings";
-import {Dial} from "../../api";
-import {useToast} from "../../message";
-import {CanPreview} from "../../hook/preview";
+import { VirtualizerScrollView } from "@fluentui/react-components/unstable";
+import React, { useEffect, useState } from "react";
+import { useStoreBucket } from "../../store/bucket";
+import { S3File } from "../../interfaces/connection";
+import { useStoreFile, useStoreFileFilter } from "../../store/file";
+import { useStoreConnection } from "../../store/connection";
+import { TrimSuffix } from "../../hook/strings";
+import { Dial } from "../../api";
+import { useToast } from "../../message";
+import { CanPreview } from "../../hook/preview";
+import { FileDetailDialog } from "../dialog/file_detail";
+import { FileInfo } from "../../interfaces/file_info";
+import { FileDeleteDialog } from "../dialog/file_delete";
 
 const useStyles = makeStyles({
     container: {
-        marginTop: "0.5rem",
-        maxWidth: "calc(100vw - 25.2rem)",
-        width: "calc(100vw - 25.2rem)",
-        maxHeight: "calc(100vh - 10rem)",
-        height: "calc(100vh - 10rem)",
+        flex: "1",
+        overflowY: "auto",
+        overflowX: "hidden",
+        display: "flex",
     },
     loading: {
         flex: "1",
@@ -108,26 +110,27 @@ export interface ListFileComponentProps {
 
 export function ListFileComponent(props: ListFileComponentProps) {
     const styles = useStyles();
-    const {dispatchMessage} = useToast();
-    const {conn_active} = useStoreConnection();
-    const {bucket_active} = useStoreBucket();
+    const { dispatchMessage } = useToast();
+    const { conn_active } = useStoreConnection();
+    const { bucket_active } = useStoreBucket();
     const [open_delete_confirm, set_open_delete_confirm] = useState(false);
-    const {file_active, files_get, file_set, files_list} = useStoreFile();
-    const {prefix, filter, prefix_set} = useStoreFileFilter();
+    const [open_file_detail, set_open_file_detail] = useState<FileInfo | null>(null);
+    const { file_active, files_get, file_set, files_list } = useStoreFile();
+    const { prefix, filter, prefix_set } = useStoreFileFilter();
     const [preview_content_type, set_preview_content_type] = useState("");
     const [ctx_menu, set_ctx_menu] = useState<{
         x: number;
         y: number;
         display: "none" | "block";
-    }>({x: 0, y: 0, display: "none"});
+    }>({ x: 0, y: 0, display: "none" });
     const [loading, set_loading] = useState(true);
 
     useEffect(() => {
         document.addEventListener("click", (e) => {
-            set_ctx_menu({x: 0, y: 0, display: "none"});
+            set_ctx_menu({ x: 0, y: 0, display: "none" });
         });
         return () => {
-            document.removeEventListener("click", (e) => {});
+            document.removeEventListener("click", (e) => { });
         };
     }, []);
 
@@ -185,7 +188,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
             bucket: bucket_active?.name,
             key: file,
             location: res1.data.result,
-        });
+        }, {timeout: -1});
         if (res2.status === 200) {
             dispatchMessage("保存文件成功", "success");
         }
@@ -207,46 +210,37 @@ export function ListFileComponent(props: ListFileComponentProps) {
         });
     }
 
-    async function handleDeleteFile() {
-        const res = await Dial('/api/file/delete', {
+    async function handleFileDetail() {
+        const res = await Dial<FileInfo>("/api/file/info", {
             conn_id: conn_active?.id,
             bucket: bucket_active?.name,
-            keys: [file_active],
-        })
-        if (res.status === 200) {
-            await files_get(conn_active!, bucket_active!, prefix, filter)
-            dispatchMessage('删除成功', 'success')
+            key: file_active ?? "",
+        });
+
+        if (res.status !== 200) {
+            dispatchMessage("获取文件详情失败", "warning");
+            return;
         }
-        set_open_delete_confirm(false)
+
+        set_open_file_detail(res.data);
     }
+
 
     return (
         <div className={styles.container}>
-            <div className={'dialog_delete_confirm'}>
-                <Dialog open={open_delete_confirm}>
-                    <DialogSurface>
-                        <DialogBody>
-                            <DialogTitle>确定删除 {file_active ?? ''} 吗?</DialogTitle>
-                            <DialogActions>
-                                <DialogTrigger disableButtonEnhancement>
-                                    <Button
-                                        onClick={_ => set_open_delete_confirm(false)}
-                                        appearance="secondary">取消</Button>
-                                </DialogTrigger>
-                                <Button
-                                    onClick={async () => {
-                                        await handleDeleteFile()
-                                    }}
-                                    appearance="primary">删除</Button>
-                            </DialogActions>
-                        </DialogBody>
-                    </DialogSurface>
-                </Dialog>
+            {/* dialog - delete confirm */}
+            <div >
+                <FileDeleteDialog open={open_delete_confirm} set={set_open_delete_confirm} />
             </div>
+            {/* dialog - file detail */}
+            <div>
+                <FileDetailDialog detail={open_file_detail} set_detail={set_open_file_detail} />
+            </div>
+            {/* 右键菜单 */}
             <div
                 id={"list-file-container"}
                 className={styles.ctx_menu}
-                style={{left: ctx_menu.x, top: ctx_menu.y, display: ctx_menu.display}}
+                style={{ left: ctx_menu.x, top: ctx_menu.y, display: ctx_menu.display }}
             >
                 <MenuList>
                     <MenuItem
@@ -255,10 +249,22 @@ export function ListFileComponent(props: ListFileComponentProps) {
                         }}
                     >
                         <Button
-                            icon={<ArrowDownloadFilled/>}
+                            icon={<ArrowDownloadFilled />}
                             iconPosition={'before'}
                             appearance={'transparent'}>
                             下载
+                        </Button>
+                    </MenuItem>
+                    <MenuItem
+                        onClick={async () => {
+                            await handleFileDetail();
+                        }}
+                    >
+                        <Button
+                            icon={<PreviewLinkRegular />}
+                            iconPosition={'before'}
+                            appearance={'transparent'}>
+                            详情
                         </Button>
                     </MenuItem>
                     <MenuItem
@@ -268,7 +274,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
                         }}
                     >
                         <Button
-                            icon={<PreviewLinkRegular/>}
+                            icon={<PreviewLinkRegular />}
                             iconPosition={'before'}
                             disabled={!preview_content_type}
                             appearance={'transparent'}>
@@ -280,7 +286,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
                         className={styles.ctx_menu_delete}
                     >
                         <Button
-                            icon={<DeleteRegular/>}
+                            icon={<DeleteRegular />}
                             iconPosition={'before'}
                             onClick={_ => set_open_delete_confirm(true)}
                             appearance={'transparent'}>
@@ -290,30 +296,33 @@ export function ListFileComponent(props: ListFileComponentProps) {
 
                 </MenuList>
             </div>
+            {/* file list - loading */}
             <div
                 className={styles.loading}
-                style={{display: loading ? "flex" : "none"}}
+                style={{ display: loading ? "flex" : "none" }}
             >
-                <Spinner appearance="primary" label="加载中..."/>
+                <Spinner appearance="primary" label="加载中..." />
             </div>
+            {/* file list - no data */}
             <div
                 className={styles.no_data}
-                style={{display: !loading && !files_list.length ? "flex" : "none"}}
+                style={{ display: !loading && !files_list.length ? "flex" : "none" }}
             >
                 <div>
-                    <DocumentDismissRegular/>
+                    <DocumentDismissRegular />
                 </div>
                 <Text size={900}>没有文件</Text>
             </div>
+            {/* file list - virtualizer list */}
             <div
-                style={{display: !loading && files_list.length ? "block" : "none"}}
+                style={{ display: !loading && files_list.length ? "block" : "none" }}
             >
                 <VirtualizerScrollView
                     numItems={files_list.length}
                     itemSize={32}
                     container={{
                         role: "list",
-                        style: {maxHeight: "calc(100vh - 10rem)"},
+                        style: { maxHeight: "calc(100vh - 10rem)" },
                     }}
                 >
                     {(idx) => {
@@ -332,9 +341,9 @@ export function ListFileComponent(props: ListFileComponentProps) {
                                     className={styles.item}
                                     icon={
                                         files_list[idx].type ? (
-                                            <FolderRegular/>
+                                            <FolderRegular />
                                         ) : (
-                                            <FileIcon name={files_list[idx].name}/>
+                                            <FileIcon name={files_list[idx].name} />
                                         )
                                     }
                                 >
@@ -361,36 +370,36 @@ function FileIcon(props: FileIconProps) {
     const suffix = strings[strings.length - 1];
     switch (suffix.toLowerCase()) {
         case "png":
-            return <DocumentImageRegular/>;
+            return <DocumentImageRegular />;
         case "jpg":
-            return <DocumentImageRegular/>;
+            return <DocumentImageRegular />;
         case "jpeg":
-            return <DocumentImageRegular/>;
+            return <DocumentImageRegular />;
         case "gif":
-            return <DocumentImageRegular/>;
+            return <DocumentImageRegular />;
         case "db":
-            return <DocumentDatabaseRegular/>;
+            return <DocumentDatabaseRegular />;
         case "sqlite":
-            return <DocumentDatabaseRegular/>;
+            return <DocumentDatabaseRegular />;
         case "sqlite3":
-            return <DocumentDatabaseRegular/>;
+            return <DocumentDatabaseRegular />;
         case "pdf":
-            return <DocumentPdfRegular/>;
+            return <DocumentPdfRegular />;
         case "css":
-            return <DocumentCssRegular/>;
+            return <DocumentCssRegular />;
         case "js":
-            return <DocumentJavascriptRegular/>;
+            return <DocumentJavascriptRegular />;
         case "yaml":
-            return <DocumentYmlRegular/>;
+            return <DocumentYmlRegular />;
         case "yml":
-            return <DocumentYmlRegular/>;
+            return <DocumentYmlRegular />;
         case "html":
-            return <DocumentChevronDoubleRegular/>;
+            return <DocumentChevronDoubleRegular />;
         case "json":
-            return <DocumentChevronDoubleRegular/>;
+            return <DocumentChevronDoubleRegular />;
         case "go":
-            return <DocumentChevronDoubleRegular/>;
+            return <DocumentChevronDoubleRegular />;
         default:
-            return <DocumentBulletListRegular/>;
+            return <DocumentBulletListRegular />;
     }
 }

@@ -28,6 +28,7 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "row",
     height: "100%",
+    width: "25rem",
   },
   content: {
     height: "100%",

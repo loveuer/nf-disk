@@ -2,14 +2,16 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/loveuer/nf-disk/internal/api"
 	"github.com/loveuer/nf-disk/internal/opt"
 	"github.com/loveuer/nf-disk/internal/tool"
 	"github.com/loveuer/nf-disk/ndh"
 	"github.com/loveuer/nf/nft/log"
-	"strings"
 )
 
 func handleError(err error) string {
@@ -32,7 +34,11 @@ func handleNotFound(path string) string {
 	return string(bs)
 }
 
-func (a *App) Invoke(path string, req string) (res string) {
+type InvokeOption struct {
+	Timeout int
+}
+
+func (a *App) Invoke(path string, req string, opt InvokeOption) (res string) {
 	log.Info("app invoke: path = %s, req = %s", path, req)
 	handler, ok := api.Resolve(path)
 	if !ok {
@@ -40,8 +46,19 @@ func (a *App) Invoke(path string, req string) (res string) {
 		return handleNotFound(path)
 	}
 
-	var buf bytes.Buffer
-	ctx := ndh.NewCtx(tool.TimeoutCtx(a.ctx), strings.NewReader(req), &buf)
+	var (
+		buf bytes.Buffer
+		dx  = context.WithValue(a.ctx, "app", a)
+		tx  = tool.TimeoutCtx(dx)
+	)
+
+	if opt.Timeout > 0 {
+		tx = tool.TimeoutCtx(dx, opt.Timeout)
+	} else if opt.Timeout < 0 {
+		tx = dx
+	}
+
+	ctx := ndh.NewCtx(tx, strings.NewReader(req), &buf)
 
 	if err := handler(ctx); err != nil {
 		return handleError(err)
