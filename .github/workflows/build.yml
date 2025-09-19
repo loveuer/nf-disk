@@ -1,11 +1,11 @@
-name: Auto Build Windows
+name: Multi-Platform Build
 on:
   push:
     tags:
       - "v*"
 
 jobs:
-  build-job:
+  build-windows:
     runs-on: windows-latest
     permissions:
       id-token: write
@@ -13,38 +13,98 @@ jobs:
       pull-requests: write
       repository-projects: write
     steps:
-      - name: install node
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: install golang
+      - name: Install Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.20.14"
 
-      - name: install wails
+      - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.7.1
 
-      - name: build
+      - name: Build Windows
         run: wails build -clean -nsis -ldflags='-s -w'
 
-      # - name: codesign windows nsis installer
-      #   working-directory: ./build/bin
-      #   run: |
-      #     echo "Creating certificate file"
-      #     New-Item -ItemType directory -Path certificate
-      #     Set-Content -Path certificate\certificate.txt -Value '${{ secrets.WIN_SIGNING_CERT }}'
-      #     certutil -decode certificate\certificate.txt certificate\certificate.pfx
-      #     echo "Signing nf-disk installer"
-      #     & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ secrets.WIN_SIGNING_CERT_PASSWORD }}' nf-disk.amd64.exe
-
-      - name: create release
-        id: create_release
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "Release_Windows_${{ github.ref_name }}"
-          files: |
+          name: windows-binaries
+          path: |
             build/bin/nf-disk-amd64-installer.exe
             build/bin/nf-disk.exe
+
+  build-darwin-arm:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20.14"
+
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.7.1
+          
+      - name: Install create-dmg (for DMG packaging)
+        run: |
+          brew install create-dmg
+
+      - name: Build macOS ARM
+        run: |
+          wails build -clean -platform darwin/arm64 -o nf-disk-arm64
+          wails build -dmg -o nf-disk-arm64
+
+      - name: Rename DMG file
+        run: |
+          mv build/bin/nf-disk-arm64.dmg build/bin/nf-disk-arm64-installer.dmg
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: darwin-arm-binaries
+          path: |
+            build/bin/nf-disk-arm64.app
+            build/bin/nf-disk-arm64-installer.dmg
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-darwin-arm]
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: release-artifacts
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: darwin-arm-binaries
+          path: release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          files: |
+            release-artifacts/*
