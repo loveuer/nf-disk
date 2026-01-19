@@ -30,6 +30,7 @@ func Init(ctx context.Context) error {
 	register("/runtime/dialog/save", handler.DialogSave(ctx))
 	register("/api/connection/test", handler.ConnectionTest)
 	register("/api/connection/create", handler.ConnectionCreate)
+	register("/api/connection/update", handler.ConnectionUpdate)
 	register("/api/connection/delete", handler.ConnectionDelete)
 	register("/api/connection/list", handler.ConnectionList)
 	register("/api/connection/connect", handler.ConnectionConnect)

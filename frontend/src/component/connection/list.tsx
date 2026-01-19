@@ -23,6 +23,7 @@ import { Dial } from "../../api";
 import { useStoreConnection } from "../../store/connection";
 import { useStoreBucket } from "../../store/bucket";
 import { ConnectionDeleteDialog } from "./delete";
+import { ConnectionForm } from "./form";
 
 const useStyles = makeStyles({
   list: {
@@ -104,6 +105,7 @@ export function ConnectionList() {
   }>({ x: 0, y: 0, display: "none" });
   const [menu_conn, set_menu_conn] = useState<Connection | null>(null);
   const [delete_dialog_open, set_delete_dialog_open] = useState(false);
+  const [edit_dialog_open, set_edit_dialog_open] = useState(false);
 
   useEffect(() => {
     document.addEventListener("click", (e) => {
@@ -233,11 +235,11 @@ export function ConnectionList() {
             </MenuItem>
             <MenuItem
               onClick={() => {
-                dispatchMessage("暂未实现", "warning");
+                set_edit_dialog_open(true);
               }}
               icon={<SettingsRegular />}
             >
-              设置
+              编辑
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -291,6 +293,15 @@ export function ConnectionList() {
           onDelete={() => handleDelete(menu_conn)}
           open={delete_dialog_open}
           onOpenChange={set_delete_dialog_open}
+        />
+      )}
+      
+      {/* 编辑对话框 */}
+      {menu_conn && (
+        <ConnectionForm
+          connection={menu_conn}
+          open={edit_dialog_open}
+          onOpenChange={set_edit_dialog_open}
         />
       )}
     </div>

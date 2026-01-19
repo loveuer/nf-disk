@@ -212,6 +212,66 @@ func ConnectionBuckets(c *ndh.Ctx) error {
 	return c.Send200(map[string]any{"list": buckets})
 }
 
+func ConnectionUpdate(c *ndh.Ctx) error {
+	type Req struct {
+		Id       uint64 `json:"id"`
+		Name     string `json:"name"`
+		Endpoint string `json:"endpoint"`
+		Access   string `json:"access"`
+		Key      string `json:"key"`
+	}
+
+	var (
+		err    error
+		req    = new(Req)
+		client *s3.Client
+	)
+
+	if err = c.ReqParse(req); err != nil {
+		return c.Send400(err.Error())
+	}
+
+	if req.Endpoint == "" || req.Access == "" || req.Key == "" {
+		return c.Send400(nil, "endpoint, secret_access, secret_key 是必填项")
+	}
+
+	if client, err = s3.New(c.Context(), req.Endpoint, req.Access, req.Key); err != nil {
+		return c.Send500(err.Error(), "连接测试失败")
+	}
+
+	if req.Name == "" {
+		req.Name = req.Endpoint
+	}
+
+	// 先断开现有连接
+	_ = manager.Manager.UnRegister(req.Id)
+
+	// 更新数据库记录
+	if err = db.Default.Session().Model(&model.Connection{}).
+		Where("id = ?", req.Id).
+		Updates(map[string]interface{}{
+			"name":     req.Name,
+			"endpoint": req.Endpoint,
+			"access":   req.Access,
+			"key":      req.Key,
+		}).Error; err != nil {
+		return c.Send500(err.Error(), "更新连接失败")
+	}
+
+	// 获取更新后的连接信息并重新连接
+	conn := &model.Connection{Id: req.Id}
+	if err = conn.Get(db.Default.Session(), c); err != nil {
+		return c.Send500(err.Error(), "获取更新后的连接失败")
+	}
+
+	// 重新注册连接
+	if err = manager.Manager.Register(conn, client); err != nil {
+		return c.Send500(err.Error(), "重新连接失败")
+	}
+
+	return c.Send200(conn, "更新连接成功")
+}
+
 func ConnectionDelete(c *ndh.Ctx) error {
 	type Req struct {
 		ConnId uint64 `json:"conn_id"`
