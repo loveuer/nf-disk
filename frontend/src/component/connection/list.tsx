@@ -22,6 +22,7 @@ import { useToast } from "../../message";
 import { Dial } from "../../api";
 import { useStoreConnection } from "../../store/connection";
 import { useStoreBucket } from "../../store/bucket";
+import { ConnectionDeleteDialog } from "./delete";
 
 const useStyles = makeStyles({
   list: {
@@ -102,6 +103,7 @@ export function ConnectionList() {
     display: "none" | "block";
   }>({ x: 0, y: 0, display: "none" });
   const [menu_conn, set_menu_conn] = useState<Connection | null>(null);
+  const [delete_dialog_open, set_delete_dialog_open] = useState(false);
 
   useEffect(() => {
     document.addEventListener("click", (e) => {
@@ -146,6 +148,18 @@ export function ConnectionList() {
       return;
     }
     await conn_set({ ...item, active: false });
+  }
+
+  async function handleDelete(item: Connection | null) {
+    if (!item) return;
+    let res = await Dial("/api/connection/delete", { conn_id: item.id });
+    if (res.status !== 200) {
+      dispatchMessage(res.msg || "删除失败", "error");
+      return;
+    }
+    
+    dispatchMessage("删除成功", "success");
+    await conn_get(); // 重新获取连接列表
   }
 
   async function handleRightClick(
@@ -227,7 +241,7 @@ export function ConnectionList() {
             </MenuItem>
             <MenuItem
               onClick={() => {
-                dispatchMessage("暂未实现", "warning");
+                set_delete_dialog_open(true);
               }}
               icon={<DeleteRegular />}
             >
@@ -269,6 +283,16 @@ export function ConnectionList() {
       <div className={styles.slider}>
         <div></div>
       </div>
+      
+      {/* 删除确认对话框 */}
+      {menu_conn && (
+        <ConnectionDeleteDialog
+          connectionName={menu_conn.name}
+          onDelete={() => handleDelete(menu_conn)}
+          open={delete_dialog_open}
+          onOpenChange={set_delete_dialog_open}
+        />
+      )}
     </div>
   );
 }
