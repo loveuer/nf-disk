@@ -106,6 +106,7 @@ export function ConnectionList() {
   const [menu_conn, set_menu_conn] = useState<Connection | null>(null);
   const [delete_dialog_open, set_delete_dialog_open] = useState(false);
   const [edit_dialog_open, set_edit_dialog_open] = useState(false);
+  const [edit_connection, set_edit_connection] = useState<Connection | null>(null);
 
   useEffect(() => {
     document.addEventListener("click", (e) => {
@@ -234,8 +235,17 @@ export function ConnectionList() {
               断开
             </MenuItem>
             <MenuItem
-              onClick={() => {
-                set_edit_dialog_open(true);
+              onClick={async () => {
+                // 先获取完整的连接信息，包括敏感字段
+                if (menu_conn) {
+                  const res = await Dial<Connection>("/api/connection/get", { id: menu_conn.id });
+                  if (res.status === 200 && res.data) {
+                    set_edit_connection(res.data);
+                    set_edit_dialog_open(true);
+                  } else {
+                    dispatchMessage(res.msg || "获取连接信息失败", "error");
+                  }
+                }
               }}
               icon={<SettingsRegular />}
             >
@@ -297,11 +307,16 @@ export function ConnectionList() {
       )}
       
       {/* 编辑对话框 */}
-      {menu_conn && (
+      {edit_connection && (
         <ConnectionForm
-          connection={menu_conn}
+          connection={edit_connection}
           open={edit_dialog_open}
-          onOpenChange={set_edit_dialog_open}
+          onOpenChange={(open) => {
+            set_edit_dialog_open(open);
+            if (!open) {
+              set_edit_connection(null);
+            }
+          }}
         />
       )}
     </div>

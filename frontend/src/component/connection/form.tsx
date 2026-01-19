@@ -74,8 +74,8 @@ export function ConnectionForm(props: ConnectionFormProps) {
         setValue({
           name: props.connection.name,
           endpoint: props.connection.endpoint,
-          access: "", // 出于安全考虑，不预填充敏感信息
-          key: "",     // 出于安全考虑，不预填充敏感信息
+          access: props.connection.access || "", // 显示已有的 access，如果没有则为空
+          key: props.connection.key || "",     // 显示已有的 key，如果没有则为空
         });
       } else {
         // 新增模式，清空表单
@@ -175,8 +175,8 @@ export function ConnectionForm(props: ConnectionFormProps) {
                 <div className="connection-form-field">
                   <Field label="secret access" required>
                     <Input
-                      placeholder={isEdit ? "留空保持不变" : ""}
-                      required={!isEdit}
+                      placeholder={isEdit ? "已回显当前密钥" : ""}
+                      required
                       value={value.access}
                       onChange={(e) => {
                         setValue({ ...value, access: e.target.value });
@@ -187,8 +187,8 @@ export function ConnectionForm(props: ConnectionFormProps) {
                 <div className="connection-form-field">
                   <Field label="secret key" required>
                     <Input
-                      placeholder={isEdit ? "留空保持不变" : ""}
-                      required={!isEdit}
+                      placeholder={isEdit ? "已回显当前密钥" : ""}
+                      required
                       value={value.key}
                       onChange={(e) => {
                         setValue({ ...value, key: e.target.value });

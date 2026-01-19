@@ -6,6 +6,9 @@ export interface Connection {
     name: string;
     endpoint: string;
     active: boolean;
+    // 编辑时需要的敏感字段，可选
+    access?: string;
+    key?: string;
 }
 
 export interface Bucket {

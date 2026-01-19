@@ -212,6 +212,28 @@ func ConnectionBuckets(c *ndh.Ctx) error {
 	return c.Send200(map[string]any{"list": buckets})
 }
 
+func ConnectionGet(c *ndh.Ctx) error {
+	type Req struct {
+		Id uint64 `json:"id"`
+	}
+
+	var (
+		err error
+		req = new(Req)
+	)
+
+	if err = c.ReqParse(req); err != nil {
+		return c.Send400(err.Error())
+	}
+
+	conn := &model.Connection{Id: req.Id}
+	if err = conn.Get(db.Default.Session(), c); err != nil {
+		return c.Send500(err.Error(), "获取连接失败")
+	}
+
+	return c.Send200(conn, "获取连接成功")
+}
+
 func ConnectionUpdate(c *ndh.Ctx) error {
 	type Req struct {
 		Id       uint64 `json:"id"`
