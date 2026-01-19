@@ -11,7 +11,6 @@ import (
 	"github.com/loveuer/nf-disk/internal/tool"
 	"github.com/loveuer/nf-disk/ndh"
 	"github.com/loveuer/nf/nft/log"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var (
@@ -30,7 +29,8 @@ func NewApp(gctx context.Context) *App {
 
 	go func() {
 		<-gctx.Done()
-		runtime.Quit(app.ctx)
+		// Don't call runtime.Quit here, let Wails handle the shutdown naturally
+		// runtime.Quit(app.ctx) // This causes the context error
 	}()
 
 	return app
