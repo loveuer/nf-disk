@@ -66,15 +66,21 @@ jobs:
         run: |
           brew install create-dmg
 
-      - name: Build macOS ARM with DMG
+      - name: Build macOS ARM
         run: |
-          wails build -clean -platform darwin/arm64 -ldflags='-s -w' -dmg -o nf-disk-arm64
+          wails build -clean -platform darwin/arm64 -ldflags='-s -w' -o nf-disk-arm64
 
-      - name: Rename DMG file
+      - name: Create DMG installer
         run: |
-          if [ -f build/bin/nf-disk-arm64.dmg ]; then
-            mv build/bin/nf-disk-arm64.dmg build/bin/nf-disk-arm64-installer.dmg
-          fi
+          cd build/bin
+          create-dmg \
+            --volname "nf-disk Installer" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            nf-disk-arm64-installer.dmg \
+            nf-disk-arm64.app
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
