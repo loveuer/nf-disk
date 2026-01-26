@@ -3,6 +3,7 @@ import { Dial } from "../../api";
 import { useStoreBucket } from "../../store/bucket";
 import { useStoreConnection } from "../../store/connection";
 import { useStoreFile, useStoreFileFilter } from "../../store/file";
+import { useToast } from "../../message";
 
 export interface FileDeleteDialogProps {
     open: boolean
@@ -14,6 +15,7 @@ export function FileDeleteDialog(props: FileDeleteDialogProps): JSX.Element {
     const { bucket_active } = useStoreBucket();
     const { file_active, files_get} = useStoreFile();
     const { prefix, filter } = useStoreFileFilter();
+    const { dispatchMessage } = useToast();
 
     async function handleDeleteFile() {
         const res = await Dial('/api/file/delete', {
@@ -31,7 +33,7 @@ export function FileDeleteDialog(props: FileDeleteDialogProps): JSX.Element {
     }
 
     return (
-        <Dialog open={props.open} onOpenChange={(event, data) => props.set(false)}>
+        <Dialog open={props.open} onOpenChange={(event, data) => props.set(data.open)}>
             <DialogSurface>
                 <DialogBody>
                     <DialogTitle>确定删除 {file_active ?? ''} 吗?</DialogTitle>
@@ -53,6 +55,4 @@ export function FileDeleteDialog(props: FileDeleteDialogProps): JSX.Element {
     )
 }
 
-function dispatchMessage(arg0: string, arg1: string) {
-    throw new Error("Function not implemented.");
-}
+
