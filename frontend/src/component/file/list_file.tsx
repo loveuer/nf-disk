@@ -211,7 +211,7 @@ export function ListFileComponent(props: ListFileComponentProps) {
     }
 
     async function handleFileDetail() {
-        const res = await Dial<FileInfo>("/api/file/info", {
+        const res = await Dial<FileInfo>("/api/file/detail", {
             conn_id: conn_active?.id,
             bucket: bucket_active?.name,
             key: file_active ?? "",

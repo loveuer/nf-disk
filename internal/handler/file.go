@@ -118,6 +118,35 @@ func FileInfo(c *ndh.Ctx) error {
 	return c.Send200(info)
 }
 
+func FileDetail(c *ndh.Ctx) error {
+	type Req struct {
+		ConnId uint64 `json:"conn_id"`
+		Bucket string `json:"bucket"`
+		Key    string `json:"key"`
+	}
+
+	var (
+		err    error
+		req    = new(Req)
+		client *s3.Client
+		detail *s3.ObjectDetail
+	)
+
+	if err = c.ReqParse(req); err != nil {
+		return c.Send400(err.Error())
+	}
+
+	if _, client, err = manager.Manager.Use(req.ConnId); err != nil {
+		return c.Send500(err.Error())
+	}
+
+	if detail, err = client.GetObjectDetail(c.Context(), req.Bucket, req.Key); err != nil {
+		return c.Send500(err.Error())
+	}
+
+	return c.Send200(detail)
+}
+
 func FileGet(c *ndh.Ctx) error {
 	type Req struct {
 		ConnId   uint64 `json:"conn_id"`
@@ -216,10 +245,10 @@ func FileDownload(c *ndh.Ctx) error {
 		}
 	}
 
-		c.Context().Value("app").(model.App).Emit(model.EmitEventDownload, map[string]any{
-			"total":  obj.Size,
-			"copied": obj.Size,
-		})
+	c.Context().Value("app").(model.App).Emit(model.EmitEventDownload, map[string]any{
+		"total":  obj.Size,
+		"copied": obj.Size,
+	})
 
 	return c.Send200(req)
 }

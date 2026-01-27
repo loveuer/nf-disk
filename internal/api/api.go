@@ -41,6 +41,7 @@ func Init(ctx context.Context) error {
 	register("/api/bucket/create", handler.BucketCreate)
 	register("/api/file/upload", handler.FileUpload)
 	register("/api/file/info", handler.FileInfo)
+	register("/api/file/detail", handler.FileDetail)
 	register("/api/file/get", handler.FileGet)
 	register("/api/file/content", handler.FileContent)
 	register("/api/file/download", handler.FileDownload)
