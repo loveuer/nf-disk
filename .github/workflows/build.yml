@@ -3,6 +3,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to build (optional, defaults to latest tag)'
+        required: false
+        type: string
 
 jobs:
   build-windows:
@@ -115,3 +121,5 @@ jobs:
           name: "Release ${{ github.ref_name }}"
           files: |
             release-artifacts/*
+          draft: false
+          prerelease: ${{ startsWith(github.ref_name, 'v') }}
