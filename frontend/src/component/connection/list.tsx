@@ -1,5 +1,6 @@
 import {
   Button,
+  Dialog,
   Input,
   makeStyles,
   MenuItem,
@@ -307,18 +308,25 @@ export function ConnectionList() {
       )}
       
       {/* 编辑对话框 */}
-      {edit_connection && (
-        <ConnectionForm
-          connection={edit_connection}
+      {edit_connection ? (
+        <Dialog
           open={edit_dialog_open}
-          onOpenChange={(open) => {
-            set_edit_dialog_open(open);
-            if (!open) {
+          onOpenChange={(event, data) => {
+            set_edit_dialog_open(data.open);
+            if (!data.open) {
               set_edit_connection(null);
             }
           }}
-        />
-      )}
+        >
+          <ConnectionForm
+            connection={edit_connection}
+            onClose={() => {
+              set_edit_dialog_open(false);
+              set_edit_connection(null);
+            }}
+          />
+        </Dialog>
+      ) : null}
     </div>
   );
 }

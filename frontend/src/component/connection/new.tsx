@@ -7,8 +7,7 @@ export interface ConnectionCreateProps {
 export function ConnectionCreate(props: ConnectionCreateProps) {
   return (
     <ConnectionForm
-      open={true}
-      onOpenChange={props.openFn}
+      onClose={() => props.openFn(false)}
       connection={null}
     />
   );

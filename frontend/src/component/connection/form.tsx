@@ -1,5 +1,4 @@
 import {
-  Dialog,
   DialogTrigger,
   DialogSurface,
   DialogTitle,
@@ -33,8 +32,7 @@ const useActionStyle = makeStyles({
 });
 
 export interface ConnectionFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean, event?: any) => void;
+  onClose: () => void;
   connection?: Connection | null; // 如果提供，则为编辑模式；否则为新增模式
 }
 
@@ -45,7 +43,7 @@ export function ConnectionForm(props: ConnectionFormProps) {
     "initial" | "loading" | "success" | "error"
   >("initial");
   const { conn_get } = useStoreConnection();
-  const isEdit = props.connection !== null;
+  const isEdit = props.connection !== null && props.connection !== undefined;
   const buttonIcon =
     testLoading === "loading" ? (
       <Spinner size="tiny" />
@@ -69,26 +67,24 @@ export function ConnectionForm(props: ConnectionFormProps) {
 
   // 如果是编辑模式，初始化表单数据
   useEffect(() => {
-    if (props.open) {
-      if (isEdit && props.connection) {
-        setValue({
-          name: props.connection.name,
-          endpoint: props.connection.endpoint,
-          access: props.connection.access || "", // 显示已有的 access，如果没有则为空
-          key: props.connection.key || "",     // 显示已有的 key，如果没有则为空
-        });
-      } else {
-        // 新增模式，清空表单
-        setValue({
-          name: "",
-          endpoint: "",
-          access: "",
-          key: "",
-        });
-      }
-      setTestLoading("initial"); // 重置测试状态
+    if (isEdit && props.connection) {
+      setValue({
+        name: props.connection.name,
+        endpoint: props.connection.endpoint,
+        access: props.connection.access || "", // 显示已有的 access，如果没有则为空
+        key: props.connection.key || "",     // 显示已有的 key，如果没有则为空
+      });
+    } else {
+      // 新增模式，清空表单
+      setValue({
+        name: "",
+        endpoint: "",
+        access: "",
+        key: "",
+      });
     }
-  }, [props.connection, isEdit, props.open]);
+    setTestLoading("initial"); // 重置测试状态
+  }, [props.connection, isEdit]);
 
   async function test() {
     if (!value.endpoint || !value.access || !value.key) {
@@ -123,7 +119,7 @@ export function ConnectionForm(props: ConnectionFormProps) {
       if (res.status === 200) {
         dispatchMessage("更新连接成功", "success");
         await conn_get();
-        props.onOpenChange(false);
+        props.onClose();
       }
     } else {
       // 新增模式
@@ -132,21 +128,16 @@ export function ConnectionForm(props: ConnectionFormProps) {
       if (res.status === 200) {
         dispatchMessage("新建连接成功", "success");
         await conn_get();
-        props.onOpenChange(false);
+        props.onClose();
       }
     }
   }
 
-  const handleDialogChange = (event: any, data: any) => {
-    props.onOpenChange(data.open);
-  };
-
   return (
-    <Dialog open={props.open} onOpenChange={handleDialogChange}>
-      <DialogSurface>
-        <DialogBody>
-          <DialogTitle>{isEdit ? "编辑S3连接" : "新建S3连接"}</DialogTitle>
-          <DialogContent>
+    <DialogSurface>
+      <DialogBody>
+        <DialogTitle>{isEdit ? "编辑S3连接" : "新建S3连接"}</DialogTitle>
+        <DialogContent>
             <div className="connection-container">
               <div className="connection-form">
                 <div className="connection-form-field">
@@ -222,6 +213,5 @@ export function ConnectionForm(props: ConnectionFormProps) {
           </DialogActions>
         </DialogBody>
       </DialogSurface>
-    </Dialog>
   );
 }
