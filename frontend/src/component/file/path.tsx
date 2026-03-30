@@ -115,10 +115,21 @@ export function Path() {
                         </Text>
                     </Tooltip>
                     {prefix && (
-                        prefix.split("/").filter(item => item).map((item, idx) => {
+                        prefix.split("/").filter(item => item).map((item, idx, arr) => {
+                            const targetPrefix = arr.slice(0, idx + 1).join("/")
                             return <div className={styles.show_line} key={idx}>
                                 <Text style={{marginLeft: '0.5rem'}}>/</Text>
-                                <Text className={styles.show_text} truncate wrap={false}>{item}</Text>
+                                <Text
+                                    className={styles.show_text}
+                                    truncate
+                                    wrap={false}
+                                    style={{cursor: 'pointer'}}
+                                    onClick={async () => {
+                                        if (targetPrefix !== prefix) {
+                                            await prefix_set(targetPrefix)
+                                        }
+                                    }}
+                                >{item}</Text>
                             </div>
                         })
                     )}
